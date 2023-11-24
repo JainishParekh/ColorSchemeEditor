@@ -94,23 +94,79 @@ def convertToHSV(img):
     
     return new_image
     
+def redFilter(img):
     
+    h,w,c = img.shape
     
+    red_filtered_image = []
+    
+    # Iterate over each pixel in the original image
+    for x in range(h):
+        each_row = []
+        for y in range(w):
+            # Get the RGB values of the pixel
+            (r, g, b) = tuple(img[x,y])
+            each_row.append((0, 0, r))
+        # Apply the red filter by setting the green and blue channels to 0
+        red_filtered_image.append(each_row)  
+    
+    red_filtered_image = np.array(red_filtered_image)
+    
+    return red_filtered_image  
 
+def greenFilter(img):
+    h,w,c = img.shape
+    
+    red_filtered_image = []
+    
+    # Iterate over each pixel in the original image
+    for x in range(h):
+        each_row = []
+        for y in range(w):
+            # Get the RGB values of the pixel
+            (r, g, b) = tuple(img[x,y])
+            each_row.append((0, g, 0))
+        # Apply the red filter by setting the green and blue channels to 0
+        red_filtered_image.append(each_row)  
+    
+    red_filtered_image = np.array(red_filtered_image)
+    
+    return red_filtered_image      
+
+def blueFilter(img):
+    h,w,c = img.shape
+    
+    red_filtered_image = []
+    
+    # Iterate over each pixel in the original image
+    for x in range(h):
+        each_row = []
+        for y in range(w):
+            # Get the RGB values of the pixel
+            (r, g, b) = tuple(img[x,y])
+            each_row.append((b,0,0))
+        # Apply the red filter by setting the green and blue channels to 0
+        red_filtered_image.append(each_row)  
+    
+    red_filtered_image = np.array(red_filtered_image)
+    
+    return red_filtered_image      
 
 def processImage(filename , operation):
     image = cv2.imread(f"static/uploads/{filename}")
-    match operation:
-        case 'ccmyk':
-            new_image = convertToCMYK(image)
-            newFilePath = 'static/final/' + filename
-            print(newFilePath)
-            cv2.imwrite(newFilePath, new_image)
-        case 'chsv':
-            new_image = convertToHSV(image)
-            newFilePath = 'static/final/' + filename
-            cv2.imwrite(newFilePath, new_image)
-    pass
+    if operation == 'ccmyk':
+        new_image = convertToCMYK(image)
+    elif operation == 'chsv':
+        new_image = convertToHSV(image)
+    elif operation == 'red':
+        new_image = redFilter(image)
+    elif operation == 'green':
+        new_image = greenFilter(image)
+    elif operation == 'blue':
+        new_image = blueFilter(image)
+    newFilePath = 'static/final/' + filename
+    print(newFilePath)
+    cv2.imwrite(newFilePath, new_image)
         
  
 @app.route('/')
