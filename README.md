@@ -5,19 +5,19 @@ Also there are red, blue, and green filters wich shows only the red, blue and gr
 ### Download the zip file or colne the repo to check the project
 
 
-#### To clone the repository:
+ To clone the repository:
 
 ```bash
 git clone https://github.com/JainishParekh/ColorSchemeEditor.git
 ```
 
-#### or you can download the zip folder directly.
+ or you can download the zip folder directly.
 
 ### You are required to have the python3
 
 ### Create the virtual Envirnment
 
-#### Then you can create the virtual the envirnment in windows using following command.
+Then you can create the virtual the envirnment in windows using following command.
 
 Here, need to replace the **virtal-env-name** with **name you like for your virtual envirnment**.
 
@@ -26,13 +26,13 @@ Here, need to replace the **virtal-env-name** with **name you like for your virt
 python -m venv virtal-env-name
 ```
 
-#### Then enter the virtual envirnment in windows using the following command.
+ Then enter the virtual envirnment in windows using the following command.
 
 ```bash
 virtal-env-name/Scripts/activate
 ```
 
-#### To deactivate the virtual envirnment
+ To deactivate the virtual envirnment
 
 ```bash
 deactivate
@@ -40,7 +40,7 @@ deactivate
 
 ### To download the required libraries
 
-#### Then you can download the requirements directly fromt the requirements.txt file using the following command.
+ Then you can download the requirements directly fromt the requirements.txt file using the following command.
 
 ```bash
 pip install -r requirements.txt
@@ -52,7 +52,7 @@ pip install -r requirements.txt
 python app.py
 ```
 
-#### Open the app on the local port after making sure of following code line in the *app.py file*
+ Open the app on the local port after making sure of following code line in the *app.py file*
 
 ```python
 app.run(debug=True , port = 8000)
