@@ -36,121 +36,115 @@ def convertToCMYK(img):
         return CMYK
     except:
         print(type(img))
-
-
-def rgb_to_hsv(r,g,b):
-    r = r / 255.0; 
-    g = g / 255.0; 
-    b = b / 255.0; 
-  
-    # h, s, v = hue, saturation, value 
-    cmax = max(r, max(g, b)); # maximum of r, g, b 
-    cmin = min(r, min(g, b)); # minimum of r, g, b 
-    diff = cmax - cmin; # diff of cmax and cmin. 
-    h,s = -1,-1
-  
-    # if cmax and cmax are equal then h = 0 
-    if cmax == cmin: 
-        h = 0; 
-  
-    # if cmax equal r then compute h 
-    elif cmax == r:
-        h = (60 * ((g - b) / diff) + 360 % 360); 
-  
-    # if cmax equal g then compute h 
-    elif (cmax == g) :
-        h = (60 * ((b - r) / diff) + 120 % 360); 
-  
-    # if cmax equal b then compute h 
-    elif (cmax == b) :
-        h = (60 * ((r - g) / diff) + 240 % 360); 
-  
-    # if cmax equal zero 
-    if (cmax == 0) :
-        s = 0; 
-    else:
-        s = (diff / cmax) * 100; 
-  
-    # compute v 
-    v = cmax * 100; 
-    
-    return (h,s,v)
-
+        
 
 def convertToHSV(img):
-    
-    h,w,c = img.shape
-    
-    new_image = []
-    for y in range(h):
-        each_row = []
-        for x in range(w):
-            (r,g,b) = tuple(img[y,x])
-            (h,s,v) = rgb_to_hsv(r,g,b) 
-            each_row.append((h,s,v))
-        new_image.append(each_row)
-    
-    new_image = np.array(new_image)
-    
-    return new_image
-    
-def redFilter(img):
-    
-    h,w,c = img.shape
-    
-    red_filtered_image = []
-    
-    # Iterate over each pixel in the original image
-    for x in range(h):
-        each_row = []
-        for y in range(w):
-            # Get the RGB values of the pixel
-            (r, g, b) = tuple(img[x,y])
-            each_row.append((0, 0, r))
-        # Apply the red filter by setting the green and blue channels to 0
-        red_filtered_image.append(each_row)  
-    
-    red_filtered_image = np.array(red_filtered_image)
-    
-    return red_filtered_image  
+    # Ensure the input image is in the BGR color space
+    b, g, r = cv2.split(img)
 
-def greenFilter(img):
-    h,w,c = img.shape
-    
-    red_filtered_image = []
-    
-    # Iterate over each pixel in the original image
-    for x in range(h):
-        each_row = []
-        for y in range(w):
-            # Get the RGB values of the pixel
-            (r, g, b) = tuple(img[x,y])
-            each_row.append((0, g, 0))
-        # Apply the red filter by setting the green and blue channels to 0
-        red_filtered_image.append(each_row)  
-    
-    red_filtered_image = np.array(red_filtered_image)
-    
-    return red_filtered_image      
+    # Normalize to the range [0, 1]
+    b, g, r = b / 255.0, g / 255.0, r / 255.0
 
-def blueFilter(img):
-    h,w,c = img.shape
-    
-    red_filtered_image = []
-    
-    # Iterate over each pixel in the original image
-    for x in range(h):
-        each_row = []
-        for y in range(w):
-            # Get the RGB values of the pixel
-            (r, g, b) = tuple(img[x,y])
-            each_row.append((b,0,0))
-        # Apply the red filter by setting the green and blue channels to 0
-        red_filtered_image.append(each_row)  
-    
-    red_filtered_image = np.array(red_filtered_image)
-    
-    return red_filtered_image      
+    # Compute the maximum and minimum values for each pixel
+    max_channel = np.maximum.reduce([r, g, b])
+    min_channel = np.minimum.reduce([r, g, b])
+
+    # Compute the value (V) channel
+    v = max_channel
+
+    # Compute the saturation (S) channel
+    s = np.where(max_channel != 0.0, (max_channel - min_channel) / max_channel, 0.0)
+
+    # Compute the hue (H) channel
+    delta = max_channel - min_channel
+    h = np.where(delta != 0.0,
+                 np.where(max_channel == r, (g - b) / delta + 6.0 * (g < b),  # Red is the dominant color
+                          np.where(max_channel == g, (b - r) / delta + 2.0,  # Green is the dominant color
+                                   (r - g) / delta + 4.0)),  # Blue is the dominant color
+                 0.0)
+
+    # Scale the hue to the range [0, 360]
+    h = h * 60.0
+
+    # Stack the H, S, V channels to get the HSV image
+    hsv = np.stack((h, s, v), axis=-1)
+
+    # Convert H, S, V channels to the range [0, 255]
+    hsv = (hsv * [1.0 / 2.0, 255.0, 255.0]).astype(np.uint8)
+
+    return hsv
+
+
+
+
+def highlightRed(img):
+    hsv = convertToHSV(img)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    lower_red = np.array([160,100,50])
+    upper_red = np.array([180,255,255])
+
+    # create a mask using the bounds set
+    mask = cv2.inRange(hsv, lower_red, upper_red)
+    # create an inverse of the mask
+    mask_inv = cv2.bitwise_not(mask)
+    # Filter only the red colour from the original image using the mask(foreground)
+    res = cv2.bitwise_and(img, img, mask=mask)
+    # Filter the regions containing colours other than red from the grayscale image(background)
+    background = cv2.bitwise_and(gray, gray, mask = mask_inv)
+    # convert the one channelled grayscale background to a three channelled image
+    background = np.stack((background,)*3, axis=-1)
+    # add the foreground and the background
+    added_img = cv2.add(res, background)    
+
+    return added_img
+
+def highlightGreen(img):
+    # hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    hsv = convertToHSV(img)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    lower_green = np.array( [30, 50, 50])
+    upper_green = np.array( [90, 255, 255])
+
+    # create a mask using the bounds set
+    mask = cv2.inRange(hsv, lower_green, upper_green)
+    # create an inverse of the mask
+    mask_inv = cv2.bitwise_not(mask)
+    # Filter only the red colour from the original image using the mask(foreground)
+    res = cv2.bitwise_and(img, img, mask=mask)
+    # Filter the regions containing colours other than red from the grayscale image(background)
+    background = cv2.bitwise_and(gray, gray, mask = mask_inv)
+    # convert the one channelled grayscale background to a three channelled image
+    background = np.stack((background,)*3, axis=-1)
+    # add the foreground and the background
+    added_img = cv2.add(res, background)    
+
+    return added_img
+
+def highlightBlue(img):
+    hsv = convertToHSV(img)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    lower_red = np.array([80, 168, 166])
+    upper_red = np.array([120,255,255])
+
+    # create a mask using the bounds set
+    mask = cv2.inRange(hsv, lower_red, upper_red)
+    # create an inverse of the mask
+    mask_inv = cv2.bitwise_not(mask)
+    # Filter only the red colour from the original image using the mask(foreground)
+    res = cv2.bitwise_and(img, img, mask=mask)
+    # Filter the regions containing colours other than red from the grayscale image(background)
+    background = cv2.bitwise_and(gray, gray, mask = mask_inv)
+    # convert the one channelled grayscale background to a three channelled image
+    background = np.stack((background,)*3, axis=-1)
+    # add the foreground and the background
+    added_img = cv2.add(res, background)    
+
+    return added_img
+
+   
 
 def processImage(filename , operation):
     image = cv2.imread(f"static/uploads/{filename}")
@@ -158,12 +152,12 @@ def processImage(filename , operation):
         new_image = convertToCMYK(image)
     elif operation == 'chsv':
         new_image = convertToHSV(image)
-    elif operation == 'red':
-        new_image = redFilter(image)
-    elif operation == 'green':
-        new_image = greenFilter(image)
-    elif operation == 'blue':
-        new_image = blueFilter(image)
+    elif operation == 'hRed':
+        new_image = highlightRed(image)
+    elif operation == 'hGreen':
+        new_image = highlightGreen(image)
+    elif operation == 'hBlue':
+        new_image = highlightBlue(image)
     newFilePath = 'static/final/' + filename
     print(newFilePath)
     cv2.imwrite(newFilePath, new_image)
@@ -186,9 +180,11 @@ def edit():
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        ori_filename = filename
         #print('upload_image filename: ' + filename)
         processImage(filename, operation)
-        flash(f"Your image has been processed and is available <a href='static/final/{filename}' target='_blank'>here</a>")
+        flash(f"""Your image has been processed and is available <a href='static/final/{filename}' target='_blank'>here</a>
+              & the original image is <a href='static/uploads/{filename}' target='_blank'>here</a>""")
         return render_template('index.html', filename=filename)
     else:
         flash('Allowed image types are - png, jpg, jpeg, gif')
@@ -196,5 +192,5 @@ def edit():
 
  
 if __name__ == "__main__":
-    # app.run(debug=True , port=5001)
-    app.run(debug=False , host='0.0.0.0')
+    app.run(debug=True , port=5001)
+    # app.run(debug=False , host='0.0.0.0')
