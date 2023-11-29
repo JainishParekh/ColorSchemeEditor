@@ -144,6 +144,21 @@ def highlightBlue(img):
 
     return added_img
 
+def balance_colors(image):
+    # Calculate the average intensity for each color channel
+    avg_intensity = np.mean(image, axis=(0, 1))
+
+    # Desired average intensity for each channel (adjust as needed)
+    target_intensity = np.array([128, 128, 128])
+
+    # Calculate the adjustment needed for each channel
+    adjustment = target_intensity / avg_intensity
+
+    # Apply the adjustment to each channel
+    balanced_image = np.clip(image * adjustment, 0, 255).astype(np.uint8)
+
+    return balanced_image
+
    
 
 def processImage(filename , operation):
@@ -158,6 +173,8 @@ def processImage(filename , operation):
         new_image = highlightGreen(image)
     elif operation == 'hBlue':
         new_image = highlightBlue(image)
+    elif operation == 'cb':
+        new_image = balance_colors(image)
     newFilePath = 'static/final/' + filename
     print(newFilePath)
     cv2.imwrite(newFilePath, new_image)
